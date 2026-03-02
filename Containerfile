@@ -1,17 +1,18 @@
-FROM node:20-alpine
-
-COPY package*.json server.js public /app
-
-RUN mkdir -p /data/alunos && \
-addgroup -S appgroup && adduser -S appuser -G appgroup && \
-chown -R appuser:appgroup /app /data && \
-npm ci --only=production
-
-USER appuser
-
-VOLUME /data
+FROM node:alpine
 
 WORKDIR /app
+
+COPY src .
+
+RUN mkdir -p /data/alunos && \
+    addgroup -S app && \
+    adduser -S app -G app && \
+    chown -R app:app /app /data && \
+    npm ci --only=production
+
+USER app
+
+VOLUME /data
 
 EXPOSE 3000
 
