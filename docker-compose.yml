@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  presente-professor:
+    build:
+      context: .
+      dockerfile: Containerfile
+    container_name: presente-professor
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/usr/src/app/data
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
