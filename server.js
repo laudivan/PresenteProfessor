@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = '/data';
 const ALUNOS_DIR = path.join(DATA_DIR, 'alunos');
 const AULAS_FILE = path.join(DATA_DIR, 'aulas.json');
 

@@ -1,6 +1,6 @@
 # Controle de Frequência - Professor
 
-Um web app em Node.js (Express) focado no registro temporário de presenças para turmas, mantendo um log separado em arquivos JSON localmente por aluno, cumprindo os requisitos de LGPD.
+Um web app em Node.js (Express) focado no registro temporário de presenças para turmas, mantendo um log separado em arquivos JSON localmente por aluno.
 
 ## Funcionalidades
 
