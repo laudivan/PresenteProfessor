@@ -168,6 +168,32 @@ app.post('/api/register-presence', async (req, res) => {
     }
 });
 
+// 4. Get All Students Frequency
+app.get('/api/students', async (req, res) => {
+    try {
+        const files = await fs.readdir(ALUNOS_DIR);
+        const students = [];
+
+        for (const file of files) {
+            if (file.endsWith('.aluno.json')) {
+                const filePath = path.join(ALUNOS_DIR, file);
+                const fileContent = await fs.readFile(filePath, 'utf-8');
+                try {
+                    const studentData = JSON.parse(fileContent);
+                    students.push(studentData);
+                } catch (parseErr) {
+                    console.error(`Error parsing file ${file}:`, parseErr);
+                }
+            }
+        }
+
+        return res.json({ success: true, students });
+    } catch (err) {
+        console.error('Error fetching students:', err);
+        return res.status(500).json({ success: false, message: 'Erro interno ao buscar alunos.' });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
