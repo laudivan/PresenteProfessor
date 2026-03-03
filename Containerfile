@@ -1,19 +1,16 @@
-FROM node:alpine
+FROM node:20
 
 WORKDIR /app
-
-COPY src .
-
-RUN mkdir -p /data/alunos && \
-    addgroup -S app && \
-    adduser -S app -G app && \
-    chown -R app:app /app /data && \
-    npm ci --only=production
-
-USER app
 
 VOLUME /data
 
 EXPOSE 3000
+
+COPY app .
+
+RUN chown -R 1000:1000 /app /data && \
+    npm ci --only=production
+
+USER 1000:1000
 
 CMD ["node", "server.js"]

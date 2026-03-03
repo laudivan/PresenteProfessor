@@ -16,11 +16,11 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - PresenteProfessor-data:/data
+      - data:/data
     restart: unless-stopped
     environment:
       - NODE_ENV=production
       - PORT=3000
 volumes:
-  PresenteProfessor-data:
+  data:
 
