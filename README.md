@@ -4,10 +4,28 @@ Um web app em Node.js (Express) focado no registro temporário de presenças par
 
 ## Funcionalidades
 
-- **Identificação da Aula:** Professor disponibiliza um código de 3 caracteres. (Deve existir no `.data/aulas.json` com `aberta: true`).
+- **Identificação da Aula:** Professor disponibiliza um código de 3 caracteres. (Criadas e gerenciadas no painel administrador).
 - **Identificação do Aluno:** Usa-se a Matrícula.
 - **Cadastro Simples:** Alunos não encontrados completam seu registro na primeira vez (Nome, Nome Social opcional e Email).
 - **Lista de Frequência JSON:** Registra data, hora (em ISOString) e código da aula.
+- **Painel Administrativo:** Permite gerenciar as Turmas (Aulas) e exportar relatórios Excel (`CSV`) dos alunos contendo dados de presença. Resguardado por autenticação via `JWT`.
+
+## Autenticação do Painel Administrativo
+
+Ao iniciar o container pela primeira vez, o sistema irá auto-gerar o arquivo `/data/adm.json` contendo as credenciais de autenticação padrão (o *hash* da senha *professor* em SHA256):
+
+- **Usuário Padrão:** `professor`
+- **Senha Padrão:** `professor`
+
+### Como Alterar a Senha (adm.json)
+Para alterar a senha padrão, você **não pode inserir plain text** (texto puro) no JSON; é obrigatório inserir o *hash* SHA256 correspondente à sua nova senha.
+
+Você pode encontrar o Hash da sua nova senha com um comando simples no terminal rodando NodeJS:
+```bash
+node -e "console.log(require('crypto').createHash('sha256').update('MINHA_NOVA_SENHA').digest('hex'))"
+```
+
+Copie a saída gerada e substitua o valor `"hash": "..."` dentro de seu arquivo `data/adm.json`.
 
 ## Como Executar Localmente
 
@@ -55,6 +73,15 @@ Array de aulas abertas para presença:
     "aberta": true
   }
 ]
+```
+
+### `data/adm.json`
+Persiste as credenciais de quem administra o painel.
+```json
+{
+  "user": "professor",
+  "hash": "6478579e37aff45f013e14eebb30dd871ce78d316a4ce382eb4b79bebc04d60c"
+}
 ```
 
 ### `data/alunos/{matricula}.aluno.json`
