@@ -1,14 +1,9 @@
+const cluster = require('cluster');
+const os = require('os');
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs/promises');
 const path = require('path');
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.use(cors());
-app.use(express.json());
-app.use(express.static('public'));
 
 const DATA_DIR = '/data';
 const ALUNOS_DIR = path.join(DATA_DIR, 'alunos');
@@ -33,167 +28,189 @@ async function init() {
     }
 }
 
-init();
+if (cluster.isPrimary) {
+    const numCPUs = os.cpus().length;
+    console.log(`Primary ${process.pid} is running`);
 
-// API Endpoints
-
-// 1. Validate Code
-app.post('/api/validate-code', async (req, res) => {
-    try {
-        const { codigo } = req.body;
-        if (!codigo || codigo.length !== 3) {
-            return res.status(400).json({ success: false, message: 'Código inválido. Deve conter 3 caracteres.' });
+    init().then(() => {
+        // Fork workers
+        for (let i = 0; i < numCPUs; i++) {
+            cluster.fork();
         }
 
-        const today = new Date().toISOString().split('T')[0];
-        let aulas = [];
+        cluster.on('exit', (worker, code, signal) => {
+            console.log(`Worker ${worker.process.pid} died. Restarting...`);
+            cluster.fork();
+        });
+    });
+} else {
+    const app = express();
+    const PORT = process.env.PORT || 3000;
+
+    app.use(cors());
+    app.use(express.json());
+    app.use(express.static('public'));
+
+    // API Endpoints
+
+    // 1. Validate Code
+    app.post('/api/validate-code', async (req, res) => {
         try {
-            const aulasData = await fs.readFile(AULAS_FILE, 'utf-8');
-            aulas = JSON.parse(aulasData);
-        } catch (readErr) {
-            console.error('Error reading aulas.json', readErr);
-        }
+            const { codigo } = req.body;
+            if (!codigo || codigo.length !== 3) {
+                return res.status(400).json({ success: false, message: 'Código inválido. Deve conter 3 caracteres.' });
+            }
 
-        const validClass = aulas.find(aula => aula.codigo === codigo && aula.data === today);
+            const today = new Date().toISOString().split('T')[0];
+            let aulas = [];
+            try {
+                const aulasData = await fs.readFile(AULAS_FILE, 'utf-8');
+                aulas = JSON.parse(aulasData);
+            } catch (readErr) {
+                console.error('Error reading aulas.json', readErr);
+            }
 
-        if (validClass) {
-            if (validClass.aberta) {
-                return res.json({ success: true, message: 'Código válido.' });
+            const validClass = aulas.find(aula => aula.codigo === codigo && aula.data === today);
+
+            if (validClass) {
+                if (validClass.aberta) {
+                    return res.json({ success: true, message: 'Código válido.' });
+                } else {
+                    return res.status(403).json({ success: false, message: 'Chamada encerrada.' });
+                }
             } else {
-                return res.status(403).json({ success: false, message: 'Chamada encerrada.' });
+                return res.status(404).json({ success: false, message: 'Código da aula não encontrado para hoje.' });
             }
-        } else {
-            return res.status(404).json({ success: false, message: 'Código da aula não encontrado para hoje.' });
+        } catch (err) {
+            console.error(err);
+            return res.status(500).json({ success: false, message: 'Erro interno no servidor.' });
         }
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ success: false, message: 'Erro interno no servidor.' });
-    }
-});
+    });
 
-// 2. Check Student
-app.post('/api/check-student', async (req, res) => {
-    try {
-        const { matricula } = req.body;
-        if (!matricula) {
-            return res.status(400).json({ success: false, message: 'Matrícula é obrigatória.' });
-        }
-
-        // Sanitize to prevent path traversal
-        const safeMatricula = path.basename(String(matricula));
-        const studentFile = path.join(ALUNOS_DIR, `${safeMatricula}.aluno.json`);
-
+    // 2. Check Student
+    app.post('/api/check-student', async (req, res) => {
         try {
-            const studentData = await fs.readFile(studentFile, 'utf-8');
-            const student = JSON.parse(studentData);
-
-            return res.json({
-                success: true,
-                exists: true,
-                student: {
-                    nome: student.nome,
-                    nome_social: student.nome_social,
-                    matricula: student.matricula
-                }
-            });
-        } catch {
-            // File does not exist
-            return res.json({ success: true, exists: false });
-        }
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ success: false, message: 'Erro interno no servidor.' });
-    }
-});
-
-// 3. Register Presence
-app.post('/api/register-presence', async (req, res) => {
-    try {
-        const { matricula, nome, nome_social, email, codigo } = req.body;
-
-        if (!matricula || !codigo) {
-            return res.status(400).json({ success: false, message: 'Matrícula e Código da aula são obrigatórios.' });
-        }
-
-        // Sanitize matricula
-        const safeMatricula = path.basename(String(matricula));
-        const studentFile = path.join(ALUNOS_DIR, `${safeMatricula}.aluno.json`);
-
-        let student;
-        const nowISO = new Date().toISOString();
-
-        try {
-            // Try to read existing student
-            const studentData = await fs.readFile(studentFile, 'utf-8');
-            student = JSON.parse(studentData);
-
-            // Check if presence already registered for this code
-            const alreadyPresent = student.frequencia.some(p => p.codigo_verificacao === codigo);
-            if (alreadyPresent) {
-                return res.status(400).json({ success: false, message: 'Presença já registrada para esta aula.' });
+            const { matricula } = req.body;
+            if (!matricula) {
+                return res.status(400).json({ success: false, message: 'Matrícula é obrigatória.' });
             }
 
-            // Add presence
-            student.frequencia.push({
-                data_hora: nowISO,
-                codigo_verificacao: codigo
-            });
-        } catch {
-            // File doesn't exist, create new student. Validation for required fields.
-            if (!nome) {
-                return res.status(400).json({ success: false, message: 'Aluno não encontrado. Nome é obrigatório para cadastro.' });
-            }
+            // Sanitize to prevent path traversal
+            const safeMatricula = path.basename(String(matricula));
+            const studentFile = path.join(ALUNOS_DIR, `${safeMatricula}.aluno.json`);
 
-            student = {
-                matricula: parseInt(safeMatricula, 10) || safeMatricula,
-                nome,
-                nome_social: nome_social || '',
-                email: email || '',
-                frequencia: [
-                    {
-                        data_hora: nowISO,
-                        codigo_verificacao: codigo
+            try {
+                const studentData = await fs.readFile(studentFile, 'utf-8');
+                const student = JSON.parse(studentData);
+
+                return res.json({
+                    success: true,
+                    exists: true,
+                    student: {
+                        nome: student.nome,
+                        nome_social: student.nome_social,
+                        matricula: student.matricula
                     }
-                ]
-            };
+                });
+            } catch {
+                // File does not exist
+                return res.json({ success: true, exists: false });
+            }
+        } catch (err) {
+            console.error(err);
+            return res.status(500).json({ success: false, message: 'Erro interno no servidor.' });
         }
+    });
 
-        // Save back to file
-        await fs.writeFile(studentFile, JSON.stringify(student, null, 2));
+    // 3. Register Presence
+    app.post('/api/register-presence', async (req, res) => {
+        try {
+            const { matricula, nome, nome_social, email, codigo } = req.body;
 
-        return res.json({ success: true, message: 'Presença registrada com sucesso.' });
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ success: false, message: 'Erro interno no servidor.' });
-    }
-});
+            if (!matricula || !codigo) {
+                return res.status(400).json({ success: false, message: 'Matrícula e Código da aula são obrigatórios.' });
+            }
 
-// 4. Get All Students Frequency
-app.get('/api/students', async (req, res) => {
-    try {
-        const files = await fs.readdir(ALUNOS_DIR);
-        const students = [];
+            // Sanitize matricula
+            const safeMatricula = path.basename(String(matricula));
+            const studentFile = path.join(ALUNOS_DIR, `${safeMatricula}.aluno.json`);
 
-        for (const file of files) {
-            if (file.endsWith('.aluno.json')) {
-                const filePath = path.join(ALUNOS_DIR, file);
-                const fileContent = await fs.readFile(filePath, 'utf-8');
-                try {
-                    const studentData = JSON.parse(fileContent);
-                    students.push(studentData);
-                } catch (parseErr) {
-                    console.error(`Error parsing file ${file}:`, parseErr);
+            let student;
+            const nowISO = new Date().toISOString();
+
+            try {
+                // Try to read existing student
+                const studentData = await fs.readFile(studentFile, 'utf-8');
+                student = JSON.parse(studentData);
+
+                // Check if presence already registered for this code
+                const alreadyPresent = student.frequencia.some(p => p.codigo_verificacao === codigo);
+                if (alreadyPresent) {
+                    return res.status(400).json({ success: false, message: 'Presença já registrada para esta aula.' });
+                }
+
+                // Add presence
+                student.frequencia.push({
+                    data_hora: nowISO,
+                    codigo_verificacao: codigo
+                });
+            } catch {
+                // File doesn't exist, create new student. Validation for required fields.
+                if (!nome) {
+                    return res.status(400).json({ success: false, message: 'Aluno não encontrado. Nome é obrigatório para cadastro.' });
+                }
+
+                student = {
+                    matricula: parseInt(safeMatricula, 10) || safeMatricula,
+                    nome,
+                    nome_social: nome_social || '',
+                    email: email || '',
+                    frequencia: [
+                        {
+                            data_hora: nowISO,
+                            codigo_verificacao: codigo
+                        }
+                    ]
+                };
+            }
+
+            // Save back to file
+            await fs.writeFile(studentFile, JSON.stringify(student, null, 2));
+
+            return res.json({ success: true, message: 'Presença registrada com sucesso.' });
+        } catch (err) {
+            console.error(err);
+            return res.status(500).json({ success: false, message: 'Erro interno no servidor.' });
+        }
+    });
+
+    // 4. Get All Students Frequency
+    app.get('/api/students', async (req, res) => {
+        try {
+            const files = await fs.readdir(ALUNOS_DIR);
+            const students = [];
+
+            for (const file of files) {
+                if (file.endsWith('.aluno.json')) {
+                    const filePath = path.join(ALUNOS_DIR, file);
+                    const fileContent = await fs.readFile(filePath, 'utf-8');
+                    try {
+                        const studentData = JSON.parse(fileContent);
+                        students.push(studentData);
+                    } catch (parseErr) {
+                        console.error(`Error parsing file ${file}:`, parseErr);
+                    }
                 }
             }
+
+            return res.json({ success: true, students });
+        } catch (err) {
+            console.error('Error fetching students:', err);
+            return res.status(500).json({ success: false, message: 'Erro interno ao buscar alunos.' });
         }
+    });
 
-        return res.json({ success: true, students });
-    } catch (err) {
-        console.error('Error fetching students:', err);
-        return res.status(500).json({ success: false, message: 'Erro interno ao buscar alunos.' });
-    }
-});
-
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+    app.listen(PORT, () => {
+        console.log(`Worker ${process.pid} running on http://localhost:${PORT}`);
+    });
+}
