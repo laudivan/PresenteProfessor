@@ -32,78 +32,98 @@
                             <h2 class="card-title text-primary fw-bold mb-0">Painel do Professor</h2>
                         </div>
 
-                        <!-- Nav tabs -->
-                        <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="aulas-tab" data-bs-toggle="tab" data-bs-target="#aulas"
-                                    type="button" role="tab" aria-controls="aulas" aria-selected="false">Aulas</button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="frequencias-tab" data-bs-toggle="tab"
-                                    data-bs-target="#frequencias" type="button" role="tab" aria-controls="frequencias"
-                                    aria-selected="true">Frequências</button>
-                            </li>
-                        </ul>
-
-                        <!-- Tab content -->
-                        <div class="tab-content" id="adminTabsContent">
-                            <!-- Tab Aulas -->
-                            <div class="tab-pane fade" id="aulas" role="tabpanel" aria-labelledby="aulas-tab">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h4 class="mb-0 text-secondary">Gerenciamento de Aulas</h4>
-                                    <button id="btnNovaAula" class="btn btn-primary btn-sm">Nova Aula</button>
+                        <!-- Login Section -->
+                        <div id="loginSection" class="text-center my-4">
+                            <form id="loginForm" class="mx-auto" style="max-width: 300px;">
+                                <div class="mb-3 text-start">
+                                    <label class="form-label text-muted">Usuário</label>
+                                    <input type="text" class="form-control" id="loginUser" required>
                                 </div>
-
-                                <div id="loadingAulas" class="text-center my-4">
-                                    <div class="spinner-border text-primary" role="status">
-                                        <span class="visually-hidden">Carregando...</span>
-                                    </div>
+                                <div class="mb-4 text-start">
+                                    <label class="form-label text-muted">Senha</label>
+                                    <input type="password" class="form-control" id="loginPassword" required>
                                 </div>
-
-                                <div class="table-responsive" id="tableAulasContainer" style="display: none;">
-                                    <table class="table table-hover align-middle">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>Código</th>
-                                                <th>Data</th>
-                                                <th>Status</th>
-                                                <th class="text-end">Aberta</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="tbodyAulas">
-                                            <!-- Rows will be injected here -->
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <!-- Tab Frequencias -->
-                            <div class="tab-pane fade show active" id="frequencias" role="tabpanel"
-                                aria-labelledby="frequencias-tab">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h4 class="mb-0 text-secondary">Listagem de Frequência</h4>
-                                    <div>
-                                        <button id="btnCopiarEmails"
-                                            class="btn btn-outline-primary btn-sm me-2 d-none">Copiar Emails</button>
-                                        <button id="btnExportar" class="btn btn-success btn-sm d-none">Exportar
-                                            (Excel)</button>
-                                    </div>
-                                </div>
-
-                                <div id="loading" class="text-center my-4">
-                                    <div class="spinner-border text-primary" role="status">
-                                        <span class="visually-hidden">Carregando...</span>
-                                    </div>
-                                    <p class="mt-2 text-muted">Buscando dados dos alunos...</p>
-                                </div>
-
-                                <div id="error-message" class="alert alert-danger d-none" role="alert"></div>
-
-                                <div class="accordion" id="studentsAccordion" style="display: none;">
-                                    <!-- Student items will be injected here -->
-                                </div>
-                            </div>
+                                <button type="submit" class="btn btn-primary w-100 mb-2">Entrar</button>
+                            </form>
                         </div>
+
+                        <!-- Dashboard Section -->
+                        <div id="dashboardSection" style="display: none;">
+                            <!-- Nav tabs -->
+                            <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="aulas-tab" data-bs-toggle="tab" data-bs-target="#aulas"
+                                        type="button" role="tab" aria-controls="aulas"
+                                        aria-selected="false">Aulas</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="frequencias-tab" data-bs-toggle="tab"
+                                        data-bs-target="#frequencias" type="button" role="tab"
+                                        aria-controls="frequencias" aria-selected="true">Frequências</button>
+                                </li>
+                            </ul>
+
+                            <!-- Tab content -->
+                            <div class="tab-content" id="adminTabsContent">
+                                <!-- Tab Aulas -->
+                                <div class="tab-pane fade" id="aulas" role="tabpanel" aria-labelledby="aulas-tab">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h4 class="mb-0 text-secondary">Gerenciamento de Aulas</h4>
+                                        <button id="btnNovaAula" class="btn btn-primary btn-sm">Nova Aula</button>
+                                    </div>
+
+                                    <div id="loadingAulas" class="text-center my-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Carregando...</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="table-responsive" id="tableAulasContainer" style="display: none;">
+                                        <table class="table table-hover align-middle">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Código</th>
+                                                    <th>Data</th>
+                                                    <th>Status</th>
+                                                    <th class="text-end">Aberta</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="tbodyAulas">
+                                                <!-- Rows will be injected here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Tab Frequencias -->
+                                <div class="tab-pane fade show active" id="frequencias" role="tabpanel"
+                                    aria-labelledby="frequencias-tab">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h4 class="mb-0 text-secondary">Listagem de Frequência</h4>
+                                        <div>
+                                            <button id="btnCopiarEmails"
+                                                class="btn btn-outline-primary btn-sm me-2 d-none">Copiar
+                                                Emails</button>
+                                            <button id="btnExportar" class="btn btn-success btn-sm d-none">Exportar
+                                                (Excel)</button>
+                                        </div>
+                                    </div>
+
+                                    <div id="loading" class="text-center my-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Carregando...</span>
+                                        </div>
+                                        <p class="mt-2 text-muted">Buscando dados dos alunos...</p>
+                                    </div>
+
+                                    <div id="error-message" class="alert alert-danger d-none" role="alert"></div>
+
+                                    <div class="accordion" id="studentsAccordion" style="display: none;">
+                                        <!-- Student items will be injected here -->
+                                    </div>
+                                </div>
+                            </div> <!-- end adminTabsContent -->
+                        </div> <!-- end dashboardSection -->
 
                     </div>
                 </div>
@@ -161,7 +181,15 @@
             tbody.innerHTML = '';
 
             try {
-                const response = await fetch('/api/aulas');
+                const token = sessionStorage.getItem('adminToken');
+                const response = await fetch('/api/aulas', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.status === 401 || response.status === 403) {
+                    sessionStorage.removeItem('adminToken');
+                    location.reload();
+                    return;
+                }
                 const result = await response.json();
 
                 if (!result.success) throw new Error(result.message);
@@ -209,11 +237,20 @@
                         }
 
                         try {
+                            const token = sessionStorage.getItem('adminToken');
                             const updateResponse = await fetch(`/api/aulas/${codigo}/status`, {
                                 method: 'PUT',
-                                headers: { 'Content-Type': 'application/json' },
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
                                 body: JSON.stringify({ aberta: isOpen })
                             });
+                            if (updateResponse.status === 401 || updateResponse.status === 403) {
+                                sessionStorage.removeItem('adminToken');
+                                location.reload();
+                                return;
+                            }
                             const updateResult = await updateResponse.json();
 
                             if (!updateResult.success) throw new Error(updateResult.message);
@@ -251,7 +288,16 @@
             btn.disabled = true;
 
             try {
-                const response = await fetch('/api/aulas', { method: 'POST' });
+                const token = sessionStorage.getItem('adminToken');
+                const response = await fetch('/api/aulas', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.status === 401 || response.status === 403) {
+                    sessionStorage.removeItem('adminToken');
+                    location.reload();
+                    return;
+                }
                 const result = await response.json();
 
                 if (!result.success) throw new Error(result.message);
@@ -268,18 +314,25 @@
         });
 
         // --- Frequencia Logic ---
-        document.addEventListener('DOMContentLoaded', async () => {
-            // Load Aulas immediately
-            loadAulas();
-
+        async function loadStudents() {
             const loading = document.getElementById('loading');
             const accordion = document.getElementById('studentsAccordion');
             const errorMessage = document.getElementById('error-message');
             const btnExportar = document.getElementById('btnExportar');
             const btnCopiarEmails = document.getElementById('btnCopiarEmails');
 
+            accordion.innerHTML = '';
+
             try {
-                const response = await fetch('/api/students');
+                const token = sessionStorage.getItem('adminToken');
+                const response = await fetch('/api/students', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.status === 401 || response.status === 403) {
+                    sessionStorage.removeItem('adminToken');
+                    location.reload();
+                    return;
+                }
                 const result = await response.json();
 
                 if (!result.success) {
@@ -481,6 +534,63 @@
                     }
 
                     document.body.removeChild(textArea);
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = sessionStorage.getItem('adminToken');
+            const loginSection = document.getElementById('loginSection');
+            const dashboardSection = document.getElementById('dashboardSection');
+            const loginForm = document.getElementById('loginForm');
+
+            if (token) {
+                // User appears logged in, show dashboard and initialize data
+                loginSection.style.display = 'none';
+                dashboardSection.style.display = 'block';
+
+                loadAulas();
+                loadStudents();
+            } else {
+                // Not logged in, leave login up
+                loginSection.style.display = 'block';
+                dashboardSection.style.display = 'none';
+            }
+
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const user = document.getElementById('loginUser').value;
+                const pass = document.getElementById('loginPassword').value;
+                const submitBtn = loginForm.querySelector('button[type="submit"]');
+
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Entrando...';
+
+                try {
+                    const response = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: user, password: pass })
+                    });
+                    const result = await response.json();
+
+                    if (!result.success) throw new Error(result.message);
+
+                    sessionStorage.setItem('adminToken', result.token);
+
+                    // Show Dashboard
+                    loginSection.style.display = 'none';
+                    dashboardSection.style.display = 'block';
+
+                    loadAulas();
+                    loadStudents();
+                    showToast('Login realizado com sucesso.');
+                } catch (err) {
+                    console.error(err);
+                    showToast('Falha no login: Credenciais inválidas.', true);
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Entrar';
                 }
             });
         });

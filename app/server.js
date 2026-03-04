@@ -4,10 +4,14 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs/promises');
 const path = require('path');
+const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'presente_professor_secret_key_123';
 const DATA_DIR = '/data';
 const ALUNOS_DIR = path.join(DATA_DIR, 'alunos');
 const AULAS_FILE = path.join(DATA_DIR, 'aulas.json');
+const ADM_FILE = path.join(DATA_DIR, 'adm.json');
 
 // Ensure directories and mock data exist
 async function init() {
@@ -22,6 +26,18 @@ async function init() {
             const mockAulas = [{ codigo: "123", data: today, aberta: true }];
             await fs.writeFile(AULAS_FILE, JSON.stringify(mockAulas, null, 2));
             console.log(`Created mock aulas.json with code "123" for today (${today}).`);
+        }
+
+        // Check if adm.json exists, if not create default
+        try {
+            await fs.access(ADM_FILE);
+        } catch {
+            const defaultAdm = {
+                user: "professor",
+                hash: "6478579e37aff45f013e14eebb30dd871ce78d316a4ce382eb4b79bebc04d60c"
+            };
+            await fs.writeFile(ADM_FILE, JSON.stringify(defaultAdm, null, 2));
+            console.log('Created default adm.json (professor/professor).');
         }
     } catch (err) {
         console.error('Error initializing data directories:', err);
@@ -51,7 +67,43 @@ if (cluster.isPrimary) {
     app.use(express.json());
     app.use(express.static('public'));
 
+    // Auth Middleware
+    const authenticateToken = (req, res, next) => {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+        if (token == null) return res.status(401).json({ success: false, message: 'Não autorizado' });
+
+        jwt.verify(token, JWT_SECRET, (err, user) => {
+            if (err) return res.status(403).json({ success: false, message: 'Acesso negado' });
+            req.user = user;
+            next();
+        });
+    };
+
     // API Endpoints
+
+    // Admin Login
+    app.post('/api/login', async (req, res) => {
+        try {
+            const { username, password } = req.body;
+            if (!username || !password) {
+                return res.status(400).json({ success: false, message: 'Usuário e senha são obrigatórios.' });
+            }
+
+            const admData = JSON.parse(await fs.readFile(ADM_FILE, 'utf-8'));
+            const inputHash = crypto.createHash('sha256').update(password).digest('hex');
+
+            if (username === admData.user && inputHash === admData.hash) {
+                const token = jwt.sign({ user: username }, JWT_SECRET, { expiresIn: '8h' });
+                return res.json({ success: true, token });
+            } else {
+                return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
+            }
+        } catch (err) {
+            console.error('Login error:', err);
+            return res.status(500).json({ success: false, message: 'Erro interno no servidor.' });
+        }
+    });
 
     // 1. Validate Code
     app.post('/api/validate-code', async (req, res) => {
@@ -197,7 +249,7 @@ if (cluster.isPrimary) {
     });
 
     // 5. Create a new Class (Aula)
-    app.post('/api/aulas', async (req, res) => {
+    app.post('/api/aulas', authenticateToken, async (req, res) => {
         try {
             // Generate a random 3-digit code
             const novoCodigo = Math.floor(100 + Math.random() * 900).toString();
@@ -224,7 +276,7 @@ if (cluster.isPrimary) {
     });
 
     // 6. Update Class Status (Toggle aberta)
-    app.put('/api/aulas/:codigo/status', async (req, res) => {
+    app.put('/api/aulas/:codigo/status', authenticateToken, async (req, res) => {
         try {
             const { codigo } = req.params;
             const { aberta } = req.body;

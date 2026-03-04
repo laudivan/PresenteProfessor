@@ -9,7 +9,7 @@ EXPOSE 3000
 COPY app .
 
 RUN chown -R 1000:1000 /app /data && \
-    npm ci --only=production
+    npm install --only=production
 
 USER 1000:1000
 
