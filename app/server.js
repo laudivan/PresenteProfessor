@@ -184,6 +184,75 @@ if (cluster.isPrimary) {
         }
     });
 
+    // 4. Get All Classes (Aulas)
+    app.get('/api/aulas', async (req, res) => {
+        try {
+            const aulasData = await fs.readFile(AULAS_FILE, 'utf-8');
+            const aulas = JSON.parse(aulasData);
+            return res.json({ success: true, aulas });
+        } catch (err) {
+            console.error('Error fetching aulas:', err);
+            return res.status(500).json({ success: false, message: 'Erro interno ao buscar aulas.' });
+        }
+    });
+
+    // 5. Create a new Class (Aula)
+    app.post('/api/aulas', async (req, res) => {
+        try {
+            // Generate a random 3-digit code
+            const novoCodigo = Math.floor(100 + Math.random() * 900).toString();
+            const today = new Date().toISOString().split('T')[0];
+
+            const novaAula = {
+                codigo: novoCodigo,
+                data: today,
+                aberta: true
+            };
+
+            const aulasData = await fs.readFile(AULAS_FILE, 'utf-8');
+            const aulas = JSON.parse(aulasData);
+
+            aulas.unshift(novaAula); // Add to the beginning
+
+            await fs.writeFile(AULAS_FILE, JSON.stringify(aulas, null, 2));
+
+            return res.json({ success: true, aula: novaAula, message: 'Aula criada com sucesso.' });
+        } catch (err) {
+            console.error('Error creating aula:', err);
+            return res.status(500).json({ success: false, message: 'Erro ao criar nova aula.' });
+        }
+    });
+
+    // 6. Update Class Status (Toggle aberta)
+    app.put('/api/aulas/:codigo/status', async (req, res) => {
+        try {
+            const { codigo } = req.params;
+            const { aberta } = req.body;
+
+            if (typeof aberta !== 'boolean') {
+                return res.status(400).json({ success: false, message: 'Status "aberta" inválido.' });
+            }
+
+            const aulasData = await fs.readFile(AULAS_FILE, 'utf-8');
+            const aulas = JSON.parse(aulasData);
+
+            const aulaIndex = aulas.findIndex(a => a.codigo === codigo);
+
+            if (aulaIndex === -1) {
+                return res.status(404).json({ success: false, message: 'Aula não encontrada.' });
+            }
+
+            aulas[aulaIndex].aberta = aberta;
+
+            await fs.writeFile(AULAS_FILE, JSON.stringify(aulas, null, 2));
+
+            return res.json({ success: true, message: 'Status da aula atualizado com sucesso.' });
+        } catch (err) {
+            console.error('Error updating aula status:', err);
+            return res.status(500).json({ success: false, message: 'Erro ao atualizar status da aula.' });
+        }
+    });
+
     // 4. Get All Students Frequency
     app.get('/api/students', async (req, res) => {
         try {

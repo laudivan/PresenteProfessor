@@ -12,7 +12,7 @@ podman-compose \
     --file=podman-compose.yml \
     --in-pod PresenteProfessor \
     up \
-    --build --no-cache \
+    --build \
     --remove-orphans \
     --quiet-pull \
     --detach \
