@@ -1,26 +1,17 @@
-# Build and Start:
-# podman-compose up -d --build
-#
-# Stop:
-# podman-compose down
-
-version: '3.8'
-
 services:
-  presenteprofessor:
-    image: presenteprofessor:latest
+  PresenteProfessor:
+    image: presente_professor:latest
+    container_name: PresenteProfessor
     build:
       context: .
       dockerfile: Containerfile
-    container_name: presenteprofessor
     ports:
       - "3000:3000"
     volumes:
-      - data:/data
+      - Data:/data
     restart: unless-stopped
     environment:
       - NODE_ENV=production
       - PORT=3000
 volumes:
-  data:
-
+  Data:
